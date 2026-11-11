@@ -1,0 +1,39 @@
+name: FPK MCAEE Announcement Checker
+
+on:
+  schedule:
+    - cron: '*/30 * * * *' # تشغيل السكربت أوتوماتيكياً كل 30 دقيقة
+  workflow_dispatch: # زر لتشغيل السكربت يدوياً للتجربة
+
+jobs:
+  check-website:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests beautifulsoup4
+
+    - name: Run Scraper
+      env:
+        GMAIL_USER: ${{ secrets.GMAIL_USER }}
+        GMAIL_APP_PASS: ${{ secrets.GMAIL_APP_PASS }}
+        RECEIVER_EMAIL: ${{ secrets.RECEIVER_EMAIL }}
+      run: python scraper.py
+
+    - name: Commit and push changes to last_seen.txt
+      run: |
+        git config --global user.name "GitHub Action Bot"
+        git config --global user.email "action@github.com"
+        git add last_seen.txt
+        git commit -m "Auto-update last seen announcements [skip ci]" || exit 0
+        git push
